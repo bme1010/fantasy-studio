@@ -10,6 +10,7 @@ import {
   FaTableList,
   FaPenToSquare,
 } from "react-icons/fa6";
+import { FiArrowLeft } from "react-icons/fi";
 
 import { getRankDifference } from "../../utils/rankings";
 import { fetchCareerGameLog } from "../../services/sleeperGameLog";
@@ -24,24 +25,31 @@ import { fetchCareerGameLog } from "../../services/sleeperGameLog";
 /*    const selectedPlayer = players.find(p => p.id === selectedPlayerId); */
 /*    const selectedRank = players.findIndex(p => p.id === selectedPlayerId) + 1; */
 /*                                                                      */
-/*    <PlayerProfile player={selectedPlayer} rank={selectedRank} />     */
+/*    <PlayerProfile                                                    */
+/*      player={selectedPlayer}                                        */
+/*      rank={selectedRank}                                            */
+/*      onClose={() => setSelectedPlayerId(null)}                      */
+/*    />                                                                */
+/*                                                                      */
+/*  onClose is new: on mobile this is a full-screen overlay now, so it  */
+/*  needs a way back to the list. Wire it to clear the selection - see  */
+/*  the App.jsx snippet at the bottom of this file.                    */
 /* ------------------------------------------------------------------ */
 
 /* ------------------------------------------------------------------ */
-/*  LAYOUT NOTE                                                        */
+/*  MOBILE LAYOUT FIX                                                  */
 /*  ------------------------------------------------------------------ */
-/*  This version trades "one long stacked scroll" for three tabs:      */
-/*  Overview (rank/ADP/experts/season snapshot), Game Log (season      */
-/*  picker + weekly pulse + table), Notes. Each tab is sized to fit    */
-/*  in the aside without scrolling past unrelated cards to get to it - */
-/*  only the game log table itself scrolls internally, same as any     */
-/*  normal data table would.                                           */
+/*  Same bug as the sidebar had: this was a static `w-96` panel with no */
+/*  way to hide itself on a phone, so the instant a player was selected */
+/*  it ate the whole screen and squeezed the rankings list to a sliver. */
 /*                                                                      */
-/*  The `aside` uses h-full + flex-col so it fills whatever height its */
-/*  parent gives it (App.jsx's layout constrains that to the viewport  */
-/*  minus the header). This was previously h-screen, which forced the  */
-/*  full window height regardless of the parent's actual space and got */
-/*  clipped by the parent's overflow-hidden as a result.               */
+/*  Fix, mirroring how Sidebar.jsx handles its drawer:                  */
+/*    - No player selected: hidden entirely on mobile (hidden md:flex), */
+/*      full desktop placeholder unchanged.                             */
+/*    - Player selected: fixed inset-0 full-screen overlay on mobile    */
+/*      (md:static md:w-96 md:border-l reverts it to the normal side    */
+/*      panel at desktop widths), with a back button in the header row  */
+/*      that's hidden at md: and up since desktop doesn't need it.      */
 /* ------------------------------------------------------------------ */
 
 /* ------------------------------------------------------------------ */
@@ -283,7 +291,7 @@ function GameLogTable({ gameLog, position }) {
             return (
               <tr key={g.week} className="border-b border-zinc-900 last:border-0">
                 <td className="whitespace-nowrap px-2 py-1.5 text-left text-xs text-zinc-500">{g.week}</td>
-                <td className="whitespace-nowrap px-2 py-1.5 text-left text-xs text-zinc-400">{g.opp}</td>
+                <td className="whitespace-nowrap px-2 py-1.5 text-left text-xs text-zinc-400">{g.opp ?? "-"}</td>
                 <td className={clsx("whitespace-nowrap px-2 py-1.5 text-right text-xs font-bold", heat)}>
                   {g.fpts}
                 </td>
@@ -311,7 +319,7 @@ function WeeklyPulse({ gameLog, avg }) {
         <span className="text-[10px] uppercase tracking-wider text-zinc-500">Weekly pulse</span>
         {hover !== null && (
           <span className="text-xs text-zinc-400">
-            Wk {gameLog[hover].week} vs {gameLog[hover].opp} · {gameLog[hover].fpts} pts
+            Wk {gameLog[hover].week} vs {gameLog[hover].opp ?? "?"} · {gameLog[hover].fpts} pts
           </span>
         )}
       </div>
@@ -348,7 +356,7 @@ const TABS = [
   { key: "notes", label: "Notes", icon: FaPenToSquare },
 ];
 
-export default function PlayerProfile({ player, rank }) {
+export default function PlayerProfile({ player, rank, onClose }) {
   const [activeTab, setActiveTab] = useState("overview");
   const [seasons, setSeasons] = useState([]);
   const [selectedYear, setSelectedYear] = useState(null);
@@ -387,8 +395,11 @@ export default function PlayerProfile({ player, rank }) {
   const stats = useMemo(() => computeStats(gameLog), [gameLog]);
 
   if (!player) {
+    // Hidden entirely on mobile (nothing to show, and it must not steal
+    // screen space from the rankings list) - desktop keeps its normal
+    // static placeholder panel.
     return (
-      <aside className="flex h-full w-96 flex-col border-l border-zinc-800 bg-zinc-900/50">
+      <aside className="hidden h-full w-96 flex-col border-l border-zinc-800 bg-zinc-900/50 md:flex">
         <div className="flex flex-1 flex-col items-center justify-center p-8 text-center">
           <div className="mb-6 text-7xl">🏈</div>
           <h2 className="text-2xl font-bold text-white">Select a Player</h2>
@@ -415,9 +426,12 @@ export default function PlayerProfile({ player, rank }) {
   };
 
   return (
-    <aside className="flex h-full w-96 flex-col border-l border-zinc-800 bg-zinc-900/50">
+    // Mobile: fixed full-screen overlay (this is what was missing - it's
+    // the same fix pattern as the sidebar drawer). Desktop (md: and up):
+    // reverts to the normal static side panel, no overlay, no backdrop.
+    <aside className="fixed inset-0 z-40 flex h-full w-full flex-col bg-zinc-950 md:static md:z-auto md:w-96 md:flex-shrink-0 md:border-l md:border-zinc-800 md:bg-zinc-900/50">
 
-      {/* Compact header - avatar, name, position, rank all in one row */}
+      {/* Compact header - back button (mobile only), avatar, name, position, rank */}
       <motion.div
         key={player.id}
         initial={{ opacity: 0, y: -4 }}
@@ -425,6 +439,14 @@ export default function PlayerProfile({ player, rank }) {
         transition={{ duration: 0.2 }}
         className="flex flex-shrink-0 items-center gap-3 border-b border-zinc-800 p-4"
       >
+        <button
+          onClick={onClose}
+          className="flex-shrink-0 rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-800 hover:text-white md:hidden"
+          aria-label="Back to rankings"
+        >
+          <FiArrowLeft size={20} />
+        </button>
+
         <PlayerAvatar player={player} />
         <div className="min-w-0 flex-1">
           <h2 className="truncate text-lg font-bold leading-tight text-white">{player.name}</h2>

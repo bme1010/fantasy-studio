@@ -155,11 +155,16 @@ export default function App() {
             </div>
           </main>
 
-          {/* Player Profile — stays pinned in view now, regardless of how
-              far down the rankings list you've scrolled. */}
+          {/* Player Profile — desktop: static side panel, unchanged.
+              Mobile: PlayerProfile.jsx now renders this as a full-screen
+              overlay only when a player is selected, with a back button
+              wired to onClose below - so it no longer permanently eats
+              the screen the way the sidebar used to before that got a
+              real open/close state. */}
           <PlayerProfile
             player={selectedPlayer}
             rank={selectedRank}
+            onClose={() => rankings.setSelectedPlayerId(null)}
           />
         </div>
       </div>
