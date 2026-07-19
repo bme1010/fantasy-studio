@@ -44,6 +44,24 @@ export default function App() {
     });
   }, [basePlayers, search, selectedPosition]);
 
+  // Each player's rank in the FULL, unfiltered rankings list — computed
+  // once here so it stays stable regardless of search/position filtering,
+  // players being removed from view in draft mode, or both at once.
+  //
+  // This gets passed to RankingList as `getRank` UNCONDITIONALLY now
+  // (previously only in draft mode) — that's what makes "#237" show up
+  // correctly when you search "ty" instead of renumbering search hits
+  // starting from "#1" just because it's the first match in a narrowed
+  // list. RankingList already knew how to use this; it just wasn't being
+  // given it outside of draft mode.
+  const originalRankById = useMemo(() => {
+    const map = new Map();
+    rankings.players.forEach((player, index) => {
+      map.set(player.id, index + 1);
+    });
+    return map;
+  }, [rankings.players]);
+
   const selectedPlayer = useMemo(() => {
     return (
       rankings.players.find(
@@ -87,8 +105,8 @@ export default function App() {
 
         <div className="flex flex-1 overflow-hidden">
           {/* Rankings */}
-          <main className="flex flex-1 flex-col overflow-hidden p-10">
-            <div className="mb-4 flex items-center justify-between">
+          <main className="flex flex-1 flex-col overflow-hidden px-6 py-4 sm:px-10 sm:py-6">
+            <div className="mb-2 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-zinc-300">
                 {isDraftMode ? "Draft Mode" : "My Rankings"}
               </h2>
@@ -117,6 +135,7 @@ export default function App() {
                 removeTierBreak={rankings.removeTierBreak}
                 hasTierBreak={rankings.hasTierBreak}
                 onDraftPlayer={isDraftMode ? draft.markDrafted : undefined}
+                getRank={(player) => originalRankById.get(player.id)}
               />
             </div>
           </main>

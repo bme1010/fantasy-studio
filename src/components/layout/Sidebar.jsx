@@ -38,11 +38,11 @@ export default function Sidebar({
 
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-white">
-              Fantasy Studio
+              Fantasy House
             </h1>
 
             <p className="text-sm text-zinc-500">
-              Your Draft Board
+              Your Personal Draft Board
             </p>
           </div>
         </div>

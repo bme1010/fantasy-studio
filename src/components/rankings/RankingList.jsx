@@ -20,6 +20,7 @@ export default function RankingList({
   removeTierBreak,
   hasTierBreak,
   onDraftPlayer,
+  getRank,
 }) {
   function handleDragEnd(event) {
     const { active, over } = event;
@@ -50,8 +51,8 @@ export default function RankingList({
         </div>
 
         <div className="pl-[40px] text-xs font-semibold uppercase tracking-wide text-zinc-500 sm:pl-[60px] sm:text-sm">
-  Player
-</div>
+          Player
+        </div>
 
         <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500 sm:text-sm">
           Pos
@@ -87,8 +88,7 @@ export default function RankingList({
 
       {/* Scrollable Player List. [scrollbar-gutter:stable] permanently
           reserves the scrollbar's width in the layout calculation, so
-          content never gets shoved under it and never gets clipped by
-          overflow-x-hidden the way ESPN was before. */}
+          content never gets shoved under it. */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]">
         <DndContext
           collisionDetection={closestCenter}
@@ -106,11 +106,21 @@ export default function RankingList({
                 currentTier++;
               }
 
+              // getRank is now always supplied by App.jsx (built from the
+              // full, unfiltered rankings list), so every row shows its
+              // real overall rank — not its position within whatever
+              // filtered/searched/draft-available subset happens to be on
+              // screen. index + 1 only kicks in as a fallback if a caller
+              // ever renders RankingList without passing getRank at all.
+              const displayRank = getRank
+                ? getRank(player)
+                : index + 1;
+
               return (
                 <SortableRankingRow
                   key={player.id}
                   player={player}
-                  rank={index + 1}
+                  rank={displayRank}
                   tier={currentTier}
                   selected={
                     selectedPlayerId === player.id

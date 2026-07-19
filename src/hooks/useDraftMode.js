@@ -103,11 +103,30 @@ export function useDraftMode(players) {
     return map;
   }, [players]);
 
+  // Sleeper ids extracted from headshot URLs - null for any player missing
+  // a headshot (e.g. Kenneth Gainwell), which is exactly why Sleeper sync
+  // needs the fallbacks below rather than relying on this alone.
   const sleeperIdToId = useMemo(() => {
     const map = new Map();
     players.forEach((p) => {
       const sid = getSleeperIdFromHeadshot(p.headshot);
       if (sid) map.set(sid, p.id);
+    });
+    return map;
+  }, [players]);
+
+  // Second fallback tier: last name + NFL team. Catches cases where the
+  // exact full-name match misses because Sleeper uses a nickname Sleeper
+  // stores that players.json doesn't (e.g. Sleeper's "Kenny Gainwell" vs
+  // players.json's "Kenneth Gainwell") - last name + team is far less
+  // likely to drift between sources than a first name is.
+  const lastNameTeamToId = useMemo(() => {
+    const map = new Map();
+    players.forEach((p) => {
+      const parts = p.name.trim().split(/\s+/);
+      const lastName = parts[parts.length - 1];
+      if (!lastName || !p.team) return;
+      map.set(`${normalizeName(lastName)}|${p.team}`, p.id);
     });
     return map;
   }, [players]);
@@ -149,11 +168,20 @@ export function useDraftMode(players) {
             return next;
           });
         } else if (mode === "sleeper") {
-          const draftedSleeperIds = await fetchSleeperDraftedPlayerIds(sleeperDraftId);
+          const draftedPicks = await fetchSleeperDraftedPlayerIds(sleeperDraftId);
           setDraftedIds((prev) => {
             const next = new Set(prev);
-            draftedSleeperIds.forEach((sid) => {
-              const id = sleeperIdToId.get(sid);
+            draftedPicks.forEach(({ sleeperId, name, lastName, team }) => {
+              // Tier 1: headshot-derived id (works for ~everyone).
+              // Tier 2: exact normalized full-name match.
+              // Tier 3: last name + team, for nickname mismatches
+              // (e.g. Sleeper's "Kenny" vs players.json's "Kenneth").
+              const id =
+                (sleeperId && sleeperIdToId.get(sleeperId)) ??
+                nameToId.get(name) ??
+                (lastName && team
+                  ? lastNameTeamToId.get(`${normalizeName(lastName)}|${team}`)
+                  : undefined);
               if (id != null) next.add(id);
             });
             return next;
@@ -183,7 +211,7 @@ export function useDraftMode(players) {
       cancelled = true;
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
-  }, [mode, leagueId, seasonYear, sleeperDraftId, nameToId, sleeperIdToId]);
+  }, [mode, leagueId, seasonYear, sleeperDraftId, nameToId, sleeperIdToId, lastNameTeamToId]);
 
   const availablePlayers = useMemo(
     () => players.filter((p) => !draftedIds.has(p.id)),

@@ -86,7 +86,8 @@ export default function RankingRow({
           </button>
         </div>
 
-        {/* Player — headshot, name, subtle team logo, draft checkbox badge */}
+        {/* Player — headshot, name (wraps to 2 lines if needed), subtle
+            team logo, draft checkbox badge on the headshot corner */}
         <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           <div className="relative shrink-0">
             <img
@@ -104,23 +105,23 @@ export default function RankingRow({
                   e.stopPropagation();
                   onDraftPlayer();
                 }}
-                className="absolute -bottom-1 -right-1 h-3.5 w-3.5 cursor-pointer rounded border-zinc-600 bg-zinc-900 accent-blue-500"
+                className="absolute -bottom-1 -right-1 h-3.5 w-3.5 cursor-pointer appearance-none rounded border border-zinc-600 bg-zinc-900 checked:border-blue-500 checked:bg-blue-500 focus:outline-none"
               />
             )}
           </div>
 
           <div className="flex min-w-0 items-start gap-1.5">
-  <span className="min-w-0 flex-1 text-sm font-semibold leading-tight sm:text-base">
-    {player.name}
-  </span>
+            <span className="min-w-0 flex-1 text-sm font-semibold leading-tight sm:text-base">
+              {player.name}
+            </span>
 
-  <img
-    src={`https://a.espncdn.com/i/teamlogos/nfl/500/${player.team?.toLowerCase()}.png`}
-    alt={player.team}
-    className="mt-0.5 h-4 w-4 shrink-0 opacity-60 sm:h-5 sm:w-5"
-    onError={(e) => { e.currentTarget.style.display = "none"; }}
-  />
-</div>
+            <img
+              src={`https://a.espncdn.com/i/teamlogos/nfl/500/${player.team?.toLowerCase()}.png`}
+              alt={player.team}
+              className="mt-0.5 h-4 w-4 shrink-0 opacity-60 sm:h-5 sm:w-5"
+              onError={(e) => { e.currentTarget.style.display = "none"; }}
+            />
+          </div>
         </div>
 
         {/* Position */}
