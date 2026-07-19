@@ -1,5 +1,5 @@
 import { FaFootballBall } from "react-icons/fa";
-import { FiSearch, FiSettings } from "react-icons/fi";
+import { FiSearch, FiSettings, FiMenu } from "react-icons/fi";
 import SaveStatus from "../common/SaveStatus";
 
 export default function Header({
@@ -8,22 +8,31 @@ export default function Header({
   setSearch,
   saveStatus,
   resetRankings,
+  onMenuClick,
 }) {
   return (
     <header className="border-b border-zinc-800 bg-zinc-950">
       {/* Top */}
-      <div className="flex items-center justify-between px-10 pt-8 pb-5">
-        <div className="flex items-center gap-4">
-          <div className="rounded-xl bg-blue-600 p-3">
+      <div className="flex items-center justify-between gap-3 px-4 pt-5 pb-4 sm:px-10 sm:pt-8 sm:pb-5">
+        <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+          {/* Mobile menu button — opens the sidebar drawer */}
+          <button
+            onClick={onMenuClick}
+            className="rounded-xl border border-zinc-800 p-2.5 text-zinc-300 transition hover:bg-zinc-900 md:hidden"
+          >
+            <FiMenu size={20} />
+          </button>
+
+          <div className="hidden rounded-xl bg-blue-600 p-3 sm:block">
             <FaFootballBall className="text-xl text-white" />
           </div>
 
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">
+          <div className="min-w-0">
+            <h1 className="truncate text-lg font-bold tracking-tight sm:text-3xl">
               Earlxo's Fantasy Football Ranking Web
             </h1>
 
-            <p className="text-zinc-400">
+            <p className="hidden text-zinc-400 sm:block">
               {selectedPosition} Rankings
             </p>
           </div>
@@ -31,9 +40,9 @@ export default function Header({
       </div>
 
       {/* Bottom */}
-      <div className="flex items-center justify-between border-t border-zinc-800 px-10 py-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-zinc-800 px-4 py-4 sm:px-10">
         {/* Search */}
-        <div className="relative w-96">
+        <div className="relative w-full sm:w-96">
           <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" />
 
           <input
@@ -45,7 +54,7 @@ export default function Header({
         </div>
 
         {/* Right */}
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-4 sm:gap-6">
           <SaveStatus status={saveStatus} />
 
          {/* <div className="text-sm text-zinc-500">

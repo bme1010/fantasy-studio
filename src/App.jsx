@@ -25,6 +25,12 @@ export default function App() {
   // down to available players + the manual/ESPN/Sleeper sync bar).
   const [isDraftMode, setIsDraftMode] = useState(false);
 
+  // Sidebar.jsx and Header.jsx already support the mobile drawer (isOpen/
+  // onClose/onMenuClick props) — this state is what was missing to
+  // actually wire it up. Without it, the hamburger button rendered but
+  // did nothing, and the sidebar just sat permanently off-screen.
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   const [search, setSearch] = useState("");
   const [selectedPosition, setSelectedPosition] = useState("Overall");
 
@@ -47,13 +53,6 @@ export default function App() {
   // Each player's rank in the FULL, unfiltered rankings list — computed
   // once here so it stays stable regardless of search/position filtering,
   // players being removed from view in draft mode, or both at once.
-  //
-  // This gets passed to RankingList as `getRank` UNCONDITIONALLY now
-  // (previously only in draft mode) — that's what makes "#237" show up
-  // correctly when you search "ty" instead of renumbering search hits
-  // starting from "#1" just because it's the first match in a narrowed
-  // list. RankingList already knew how to use this; it just wasn't being
-  // given it outside of draft mode.
   const originalRankById = useMemo(() => {
     const map = new Map();
     rankings.players.forEach((player, index) => {
@@ -79,33 +78,49 @@ export default function App() {
   }, [rankings.players, rankings.selectedPlayerId]);
 
   return (
-    // h-screen (not min-h-screen) locks the whole app to the viewport
-    // height. That's what makes the nested overflow-hidden/overflow-y-auto
-    // setup below actually work: only the rankings list scrolls internally,
-    // while the sidebar, header, and player profile panel stay fixed in
-    // place instead of scrolling away with the page.
-    <div className="flex h-screen bg-zinc-950 text-white">
-      {/* Sidebar */}
+    // h-screen locks the app to viewport height; the 100dvh inline style
+    // overrides it on browsers that support dvh (iOS/mobile browsers resize
+    // the viewport as their address bar shows/hides, which 100vh doesn't
+    // account for — unsupported browsers just ignore the invalid value and
+    // fall back to the h-screen class, so this is a safe no-downside add).
+    //
+    // min-h-0 appears at every nested flex level below. This — not
+    // anything mobile-specific — is what was causing "rankings fills the
+    // whole screen and I have to scroll up to see the header/profile" on
+    // DESKTOP too: flex children default to min-height: auto, so they grow
+    // to fit ALL their content (all 319 players) instead of respecting
+    // overflow-hidden and scrolling internally. min-h-0 overrides that
+    // default so the height constraint actually applies, and only the
+    // player list itself scrolls.
+    <div
+      className="flex h-screen min-h-0 bg-zinc-950 text-white"
+      style={{ height: "100dvh" }}
+    >
+      {/* Sidebar — slides in as a drawer on mobile (controlled by
+          sidebarOpen), static/always-visible on desktop */}
       <Sidebar
         players={rankings.players}
         selectedPosition={selectedPosition}
         setSelectedPosition={setSelectedPosition}
         resetRankings={rankings.resetRankings}
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
       />
 
       {/* Main Content */}
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <Header
           selectedPosition={selectedPosition}
           search={search}
           setSearch={setSearch}
           saveStatus={saveStatus}
           resetRankings={rankings.resetRankings}
+          onMenuClick={() => setSidebarOpen(true)}
         />
 
-        <div className="flex flex-1 overflow-hidden">
+        <div className="flex min-h-0 flex-1 overflow-hidden">
           {/* Rankings */}
-          <main className="flex flex-1 flex-col overflow-hidden px-6 py-4 sm:px-10 sm:py-6">
+          <main className="flex min-h-0 flex-1 flex-col overflow-hidden px-6 py-4 sm:px-10 sm:py-6">
             <div className="mb-2 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-zinc-300">
                 {isDraftMode ? "Draft Mode" : "My Rankings"}
@@ -125,7 +140,7 @@ export default function App() {
 
             {isDraftMode && <DraftModeBar {...draft} />}
 
-            <div className="flex-1 overflow-hidden">
+            <div className="min-h-0 flex-1 overflow-hidden">
               <RankingList
                 players={filteredPlayers}
                 selectedPlayerId={rankings.selectedPlayerId}

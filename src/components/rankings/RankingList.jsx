@@ -41,7 +41,7 @@ export default function RankingList({
   let currentTier = 1;
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900 shadow-xl">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900 shadow-xl">
       {/* Header */}
       <div
         className={`grid ${RANKING_GRID} items-center border-b border-zinc-800 bg-zinc-900 px-3 py-3 pr-4 sm:px-4`}
@@ -88,8 +88,10 @@ export default function RankingList({
 
       {/* Scrollable Player List. [scrollbar-gutter:stable] permanently
           reserves the scrollbar's width in the layout calculation, so
-          content never gets shoved under it. */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]">
+          content never gets shoved under it. min-h-0 is required here too
+          — it's a flex-1 child of a flex-col parent, so without it this
+          container would grow to fit all 319 rows instead of scrolling. */}
+      <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]">
         <DndContext
           collisionDetection={closestCenter}
           onDragEnd={handleDragEnd}
@@ -106,12 +108,10 @@ export default function RankingList({
                 currentTier++;
               }
 
-              // getRank is now always supplied by App.jsx (built from the
-              // full, unfiltered rankings list), so every row shows its
-              // real overall rank — not its position within whatever
-              // filtered/searched/draft-available subset happens to be on
-              // screen. index + 1 only kicks in as a fallback if a caller
-              // ever renders RankingList without passing getRank at all.
+              // getRank is always supplied by App.jsx (built from the full,
+              // unfiltered rankings list), so every row shows its real
+              // overall rank — not its position within whatever filtered/
+              // searched/draft-available subset happens to be on screen.
               const displayRank = getRank
                 ? getRank(player)
                 : index + 1;
