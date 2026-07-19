@@ -1,6 +1,10 @@
 import {
   DndContext,
   closestCenter,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
 } from "@dnd-kit/core";
 
 import {
@@ -22,6 +26,25 @@ export default function RankingList({
   onDraftPlayer,
   getRank,
 }) {
+  // Mouse: starts dragging after moving 8px, so a plain click still
+  // registers as a click instead of an accidental micro-drag.
+  //
+  // Touch: this is the actual mobile fix. Default behavior starts the
+  // drag on first touch, which fights the browser's own scroll gesture -
+  // your thumb can't tell "I'm scrolling" from "I'm dragging" and neither
+  // can the browser. A short delay (200ms) means a normal scroll-swipe
+  // never triggers a drag at all; only a deliberate press-and-hold does.
+  // tolerance allows a few px of finger wobble during that hold without
+  // cancelling it.
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 200, tolerance: 8 },
+    })
+  );
+
   function handleDragEnd(event) {
     const { active, over } = event;
 
@@ -93,6 +116,7 @@ export default function RankingList({
           container would grow to fit all 319 rows instead of scrolling. */}
       <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]">
         <DndContext
+          sensors={sensors}
           collisionDetection={closestCenter}
           onDragEnd={handleDragEnd}
         >

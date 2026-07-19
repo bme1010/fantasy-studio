@@ -55,11 +55,19 @@ export default function RankingRow({
         )}
       >
         {/* Rank column: drag handle, rank number, flag */}
-        <div className="flex flex-col items-center gap-1">
+        <div className="flex flex-col items-center gap-0.5">
+          {/* touch-none stops the browser treating a touch-and-hold here as
+              the start of a page scroll - without it, TouchSensor's delay
+              activation never gets a clean signal because the browser has
+              already claimed the gesture for scrolling. -m-2 p-2 expands
+              the actual tappable/holdable area to ~44px (Apple's minimum
+              touch target) without changing the visible icon size or the
+              row's layout. */}
           <button
             {...dragHandleProps}
             onClick={(e) => e.stopPropagation()}
-            className="cursor-grab text-zinc-500 hover:text-white active:cursor-grabbing"
+            className="-m-2 cursor-grab touch-none p-2 text-zinc-500 hover:text-white active:cursor-grabbing active:text-blue-400"
+            aria-label="Drag to reorder"
           >
             <FaGripVertical size={15} />
           </button>
@@ -74,6 +82,7 @@ export default function RankingRow({
               toggleTierBreak();
             }}
             title="Mark tier break"
+            className="-m-2 p-2"
           >
             <FaFlag
               size={12}
